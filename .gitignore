@@ -1,0 +1,114 @@
+# ==========================================
+# 1. MÔI TRƯỜNG & SECRET KEYS (BẢO MẬT)
+# ==========================================
+.env
+*.env
+.env.*
+!.env.example
+.md
+context/*.md
+# Các file chứa key/chứng chỉ (nếu có)
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# 2. TERRAFORM (HẠ TẦNG)
+# ==========================================
+**/.terraform/*
+.terraformrc
+terraform.rc
+# State files (Cực kỳ nhạy cảm)
+*.tfstate
+*.tfstate.*
+# Biến chứa thông tin thật
+*.tfvars
+*.tfvars.json
+!example.tfvars
+# File log khi crash
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ==========================================
+# 3. AI & MACHINE LEARNING (PYTHON)
+# ==========================================
+# Thư mục weights theo kiến trúc
+apps/AI/*/weights/*
+# Các định dạng mô hình
+*.pt
+*.pth
+*.bin
+*.h5
+*.onnx
+# Thư viện và cache của Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+
+# ==========================================
+# 4. NODE.JS & NEXT.JS (FRONTEND / GATEWAY)
+# ==========================================
+node_modules/
+.next/
+out/
+build/
+dist/
+# File log của các package manager
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ==========================================
+# 5. JAVA SPRING BOOT (SERVICES-JAVA)
+# ==========================================
+# Thư mục build của Maven/Gradle
+target/
+build/
+.gradle/
+out/
+# File biên dịch
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+# Giữ lại file thực thi của maven wrapper để người khác có thể dùng
+!.mvn/wrapper/maven-wrapper.jar
+
+# ==========================================
+# 6. GO (SERVICES-GO)
+# ==========================================
+# Thư mục chứa thư viện local của Go (nếu dùng vendor)
+vendor/
+/services-Go/**/vendor/
+# Các file nhị phân (binary) sinh ra khi build ứng dụng
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Nếu bạn có thư mục bin để chứa file build nội bộ
+bin/
+
+# ==========================================
+# 7. IDE & HỆ ĐIỀU HÀNH
+# ==========================================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Hệ điều hành Mac / Windows
+.DS_Store
+Thumbs.db

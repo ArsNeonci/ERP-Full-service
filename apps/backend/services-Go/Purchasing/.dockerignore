@@ -1,0 +1,10 @@
+.git
+.gitignore
+.idea
+.vscode
+*.env
+dist/
+bin/
+# Loại bỏ chính file binary nếu bạn có lỡ build thử ở local
+app
+main

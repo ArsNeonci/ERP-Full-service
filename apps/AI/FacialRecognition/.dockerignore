@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+venv/
+.env
+# BẮT BUỘC CHẶN MODEL WEIGHTS & THƯ VIỆN ẢNH TEST
+weights/
+*.pt
+*.onnx
+sample_images/
+datasets/
