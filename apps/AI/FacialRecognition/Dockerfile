@@ -1,4 +1,8 @@
-FROM arsneonci/ai-base:latest 
+# 1. Khai báo biến BASE_IMAGE (có thể để mặc định là python thuần để chạy local)
+ARG BASE_IMAGE=python:3.13.6-slim-bullseye
+
+# 2. Sử dụng biến này làm base
+FROM ${BASE_IMAGE}
 WORKDIR /app
 
 COPY requirements.txt .

@@ -1,0 +1,122 @@
+name: Monorepo CI/CD - Build & Push to GAR
+
+on:
+  push:
+    branches: [ "main" ]
+    # Lọc chỉ chạy CI khi có thay đổi trong source code
+    paths:
+      - 'apps/**'
+      - '.github/workflows/ci.yml'
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: ${{ secrets.GAR_LOCATION }}
+  GAR_REPO: ${{ secrets.GAR_REPOSITORY }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    name: Build & Push ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+    
+    # BẮT BUỘC để WIF có thể cấp phát OIDC Token
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Khai báo mapping cho các ứng dụng trong hệ thống
+        service:
+          - name: erp-frontend
+            context: ./apps/frontend/erp-ars-neonci
+            dockerfile: ./apps/frontend/erp-ars-neonci/Dockerfile
+
+          - name: api-gateway
+            context: ./apps/Middleware/gateway
+            dockerfile: ./apps/Middleware/gateway/Dockerfile
+          - name: auth-identity
+            context: ./apps/Middleware/identity
+            dockerfile: ./apps/Middleware/identity/Dockerfile
+
+          - name: backend-hrm
+            context: ./apps/backend/services-Java/hrm
+            dockerfile: ./apps/backend/services-Java/hrm/Dockerfile
+          - name: backend-finance
+            context: ./apps/backend/services-Java/finance
+            dockerfile: ./apps/backend/services-Java/finance/Dockerfile
+          - name: backend-crm
+            context: ./apps/backend/services-Java/crm
+            dockerfile: ./apps/backend/services-Java/crm/Dockerfile
+
+          - name: backend-inventory
+            context: ./apps/backend/services-Go/Inventory
+            dockerfile: ./apps/backend/services-Go/Inventory/Dockerfile
+          - name: backend-purchasing
+            context: ./apps/backend/services-Go/Purchasing
+            dockerfile: ./apps/backend/services-Go/Purchasing/Dockerfile
+          - name: backend-sales
+            context: ./apps/backend/services-Go/Sales
+            dockerfile: ./apps/backend/services-Go/Sales/Dockerfile
+
+          - name: ai-chatbot
+            context: ./apps/AI/Chatbot
+            dockerfile: ./apps/AI/Chatbot/Dockerfile
+            is_ai: true
+          - name: ai-face-recognition
+            context: ./apps/AI/FacialRecognition
+            dockerfile: ./apps/AI/FacialRecognition/Dockerfile
+            is_ai: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+
+      # Xác thực an toàn với GCP (Không dùng Key JSON)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # Cấu hình Docker cli để đẩy được lên Google Artifact Registry
+      - name: Configure Docker for GAR
+        run: |
+          gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
+
+      - name: Kiểm tra danh sách file (Debug)
+        run: |
+          pwd
+          ls -la
+          ls -la apps/ || echo "Không tìm thấy thư mục apps"
+
+      # Cài đặt Buildx để sử dụng Docker Cache (cực kỳ cần thiết cho Java/Go)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.2.0
+
+      - name: Build and Push AI Base Image
+        if: ${{ matrix.service.is_ai == true }}
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: ./apps/AI
+          file: ./apps/AI/base.Dockerfile
+          push: true
+          tags: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/ai-base:latest
+          # Lưu cache riêng cho Base Image
+          cache-from: type=gha,scope=ai-base
+          cache-to: type=gha,mode=max,scope=ai-base
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ matrix.service.name }}:${{ env.IMAGE_TAG }}
+            ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ matrix.service.name }}:latest
+          # Cấu hình lưu cache layer lên GitHub Actions cache
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
