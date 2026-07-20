@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-crm
+  labels:
+    app: backend-crm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-crm
+  template:
+    metadata:
+      labels:
+        app: backend-crm
+    spec:
+      containers:
+      - name: backend-crm
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/backend-crm:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-crm-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-crm
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

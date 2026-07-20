@@ -7,7 +7,6 @@ module "security" {
   # Bơm dữ liệu từ thư mục gốc vào module
   project_id = var.project_id
   region     = var.region
-  admin_ip   = var.admin_ip
 }
 
 # 2. Gọi Module Core Infrastructure (Nằm trong thư mục main)

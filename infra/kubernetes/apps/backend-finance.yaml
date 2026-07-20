@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-finance
+  labels:
+    app: backend-finance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-finance
+  template:
+    metadata:
+      labels:
+        app: backend-finance
+    spec:
+      containers:
+      - name: backend-finance
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/backend-finance:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-finance-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-finance
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        command:
+        - cloudflared
+        - tunnel
+        - --no-autoupdate
+        - run
+        - --token
+        - "eyJhIjoiYzE4NmVmNDI5OWE2YTExYzM4NTlmOWQwM2UxODFlOTQiLCJ0IjoiZDk1MmNlZTYtM2NhNy00N2RmLTliZDMtNTQ0YjdlMWRjMWJjIiwicyI6IldUMUtjVTU0S0R4V0sxOHpJME16U3lGRE9HTlllVGxxTWprdGVFeGJVaVZ6VmpCNlNWaDVPRzV3VlRkaFB6OVhlWGcrV1d0WGJEMTdMVGRVTmpaTld3PT0ifQ==" # Lấy từ Terraform output

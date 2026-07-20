@@ -1,7 +1,5 @@
-# security/firewall.tf
 # Rule chặn/mở port - Tối ưu hóa bảo mật theo mô hình Cloudflare Tunnel (Zero Trust)
-
-# 1. Chỉ cho phép IP của bạn SSH (cổng 22) và kết nối Kubernetes API (cổng 6443) để quản trị hệ thống
+# 1. Chỉ cho phép Google IAP (dùng SSH/K8s API), ĐÓNG HOÀN TOÀN PUBLIC INTERNET
 resource "google_compute_firewall" "allow_admin" {
   name    = "allow-admin-management"
   network = google_compute_network.erp_vpc.name
@@ -11,10 +9,7 @@ resource "google_compute_firewall" "allow_admin" {
     ports    = ["22", "6443"]
   }
 
-  source_ranges = [var.admin_ip]
+  # Chỉ cho phép dải IP của mạng lưới Google IAP
+  source_ranges = ["35.235.240.0/20"]
   target_tags   = ["k3s-node"]
 }
-
-# LƯU Ý KIẾN TRÚC:
-# Toàn bộ cổng inbound 80/443 phục vụ traffic công cộng đã được ĐÓNG HOÀN TOÀN ở tầng hạ tầng này.
-# Traffic từ internet đi vào sẽ đi qua Cloudflare Tunnel nhờ kết nối outbound do K3s Agent tự thiết lập.

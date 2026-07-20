@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-face-recognition
+  labels:
+    app: ai-face-recognition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-face-recognition
+  template:
+    metadata:
+      labels:
+        app: ai-face-recognition
+    spec:
+      containers:
+      - name: ai-face-recognition
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/ai-face-recognition:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-face-recognition-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-face-recognition
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

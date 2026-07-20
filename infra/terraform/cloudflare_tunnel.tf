@@ -1,16 +1,14 @@
-# infra/terraform/cloudflare_tunnel.tf
-
-# 1. Tạo chuỗi ngẫu nhiên làm Secret cho Tunnel
+# 1. Tạo chuỗi ngẫu nhiên Secret cho Tunnel
 resource "random_password" "tunnel_secret" {
   length  = 64
   special = true
 }
 
-# 2. Khởi tạo Cloudflare Tunnel (Sử dụng Resource mới)
+# 2. Khởi tạo Cloudflare Tunnel
 resource "cloudflare_zero_trust_tunnel_cloudflared" "k3s_tunnel" {
   account_id = var.cloudflare_account_id
   name       = "erp-monorepo-tunnel"
-  secret     = base64encode(random_password.tunnel_secret.result) 
+  secret     = base64encode(random_password.tunnel_secret.result)
 }
 
 # 3. Định tuyến trang nội bộ (Portal)
@@ -29,4 +27,12 @@ resource "cloudflare_record" "ecommerce_cname" {
   content = "${cloudflare_zero_trust_tunnel_cloudflared.k3s_tunnel.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
+}
+
+# 5. ĐỊNH TUYẾN DẢI MẠNG NỘI BỘ (VPC) VÀO TUNNEL ĐỂ DÙNG WARP
+resource "cloudflare_tunnel_route" "k3s_vpc_route" {
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.k3s_tunnel.id
+  network    = "10.0.10.0/24"
+  comment    = "K3s Internal Network for WARP"
 }

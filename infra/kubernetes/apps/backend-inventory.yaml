@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-inventory
+  labels:
+    app: backend-inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-inventory
+  template:
+    metadata:
+      labels:
+        app: backend-inventory
+    spec:
+      containers:
+      - name: backend-inventory
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/backend-inventory:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-inventory-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-inventory
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

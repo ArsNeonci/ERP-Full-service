@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-identity
+  labels:
+    app: auth-identity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-identity
+  template:
+    metadata:
+      labels:
+        app: auth-identity
+    spec:
+      containers:
+      - name: auth-identity
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/auth-identity:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-identity-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-identity
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

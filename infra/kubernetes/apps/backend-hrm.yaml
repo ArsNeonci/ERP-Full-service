@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-hrm
+  labels:
+    app: backend-hrm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-hrm
+  template:
+    metadata:
+      labels:
+        app: backend-hrm
+    spec:
+      containers:
+      - name: backend-hrm
+        image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/backend-hrm:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-hrm-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-hrm
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
