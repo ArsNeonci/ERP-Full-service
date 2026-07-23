@@ -1,5 +1,5 @@
 # 1. Khai báo biến BASE_IMAGE (có thể để mặc định là python thuần để chạy local)
-ARG BASE_IMAGE=python:3.13.6-slim-bullseye
+ARG BASE_IMAGE=python:3.9.12
 
 # 2. Sử dụng biến này làm base
 FROM ${BASE_IMAGE}

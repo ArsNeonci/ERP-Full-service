@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+venv/
+.env
+# BẮT BUỘC CHẶN MODEL WEIGHTS
+weights/
+*.pt
+*.bin
+*.gguf
+*.onnx

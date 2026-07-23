@@ -11,7 +11,8 @@ context/*.md
 *.pem
 *.key
 *.cert
-
+*secret*.yaml
+infra/kubernetes/base/db-secrets.yaml
 # ==========================================
 # 2. TERRAFORM (HẠ TẦNG)
 # ==========================================

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # ==========================================
 # KHAI BÁO NETWORK CHUNG CHO TOÀN BỘ HỆ THỐNG
 # ==========================================
@@ -13,27 +11,27 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  chroma_data:
+  mongo_data:
 
 services:
   # =========================================================
   # [PROFILE: INFRA] - CÁC DỊCH VỤ HẠ TẦNG & DATABASE
   # =========================================================
   postgres-db:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15-trixie
+
+
     profiles: ["infra", "fullstack"]
     container_name: erp-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_password}
-      # Truyền danh sách các DB cần tạo vào biến custom này
-      POSTGRES_MULTIPLE_DATABASES: "identity_db,inventory_db,purchasing_db,sales_db,crm_db,finance_db,hrm_db"
+      POSTGRES_MULTIPLE_DATABASES: "identity_db,inventory_db,purchasing_db,sales_db,crm_db,finance_db,hrm_db,ai_orchestrator_db,ai_vector_db"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Mount script vào thư mục entrypoint của Postgres
       - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     networks:
       - erp_network
@@ -41,7 +39,7 @@ services:
 
 
   redis-cache:
-    image: redis:7-alpine
+    image: redis:8.10-rc2-alpine3.23
     profiles: ["infra", "fullstack"]
     container_name: erp-redis
     restart: unless-stopped
@@ -52,15 +50,17 @@ services:
     networks:
       - erp_network
 
-  chromadb:
-    image: chromadb/chroma:latest
+  mongodb-service:
+    image: mongo:8.3.4
     profiles: ["infra", "fullstack"]
-    container_name: erp-chromadb
+    container_name: erp-mongodb
     restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ai_logs_db
     ports:
-      - "8000:8000"
+      - "27017:27017"
     volumes:
-      - chroma_data:/chroma/chroma
+      - mongo_data:/data/db
     networks:
       - erp_network
 
@@ -99,7 +99,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=identity_db
     depends_on:
       - postgres-db
@@ -121,7 +121,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=inventory_db
     depends_on:
       - postgres-db
@@ -140,7 +140,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=purchasing_db
     depends_on:
       - postgres-db
@@ -159,7 +159,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=sales_db
     depends_on:
       - postgres-db
@@ -181,7 +181,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=crm_db
       - REDIS_HOST=redis-cache # CRM sử dụng Redis cache
       - REDIS_PORT=6379
@@ -203,7 +203,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=finance_db
     depends_on:
       - postgres-db
@@ -222,7 +222,7 @@ services:
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=secret_password
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=hrm_db
     depends_on:
       - postgres-db
@@ -232,22 +232,58 @@ services:
   # ---------------------------------------------------------
   # 4. AI SERVICES (PYTHON FASTAPI)
   # ---------------------------------------------------------
-  ai-chatbot:
+
+  ai-orchestrator:
     build:
-      context: ./apps/AI/Chatbot
+      context: ./apps/AI/Orchestrator
       dockerfile: Dockerfile
     profiles: ["fullstack"]
-    container_name: erp-ai-chatbot
+    container_name: erp-ai-orchestrator
     restart: unless-stopped
     environment:
       - ENV=development
-      - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000
+      # Kết nối Postgres (Lưu State/LangGraph)
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=ai_orchestrator_db
+      # Kết nối Redis (Cache & Token)
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      # Kết nối MongoDB (Reasoning Logs)
+      - MONGO_HOST=mongodb-service
+      - MONGO_PORT=27017
+      - MONGO_DB=ai_logs_db
     depends_on:
-      - chromadb
+      - postgres-db
+      - redis-cache
+      - mongodb-service
     networks:
       - erp_network
 
+  ai-multimodal-engine:
+    build:
+      context: ./apps/AI/MultimodalEngine
+      dockerfile: Dockerfile
+      args:
+        # Chạy Local dùng image thuần
+        BASE_IMAGE: python:3.13.6-slim-bullseye 
+    profiles: ["fullstack"]
+    container_name: erp-ai-multimodal-engine
+    restart: unless-stopped
+    environment:
+      - ENV=development
+      # Kết nối Postgres có pgvector
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=ai_vector_db
+    depends_on:
+      - postgres-db
+    networks:
+      - erp_network
   ai-facial-recognition:
     build:
       context: ./apps/AI/FacialRecognition
@@ -257,6 +293,11 @@ services:
     restart: unless-stopped
     environment:
       - ENV=development
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=facial_recognition_db
     networks:
       - erp_network
 

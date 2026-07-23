@@ -1,4 +1,4 @@
-FROM python:3.13.6-slim-bullseye AS ai-base
+FROM python:3.9.12 AS ai-base
 WORKDIR /app
 
 # Cài đặt các thư viện hệ thống cần thiết cho OpenCV

@@ -1,9 +1,12 @@
-# 1. Khai báo biến BASE_IMAGE (có thể để mặc định là python thuần để chạy local)
-ARG BASE_IMAGE=python:3.13.6-slim-bullseye
-
-# 2. Sử dụng biến này làm base
-FROM ${BASE_IMAGE}
+# Sử dụng trực tiếp image Python nhẹ vì Orchestrator không cần tính toán AI nặng
+FROM python:3.9.12
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
