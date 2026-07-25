@@ -26,5 +26,5 @@ USER gouser:gouser
 
 COPY --from=build /app/app .
 
-EXPOSE 8083
+EXPOSE 8080
 ENTRYPOINT ["./app"]
