@@ -25,14 +25,14 @@ resource "google_artifact_registry_repository" "erp_docker_repo" {
     }
   }
 
-  # 2. Chính sách GIỮ LẠI: Luôn giữ 5 phiên bản mới nhất của mỗi repository (Dùng để rollback khi cần)
-  cleanup_policies {
-    id     = "keep-recent-5-versions"
-    action = "KEEP"
-    most_recent_versions {
-      keep_count = 5
-    }
-  }
+  # 2. Chính sách GIỮ LẠI: Luôn giữ 2 phiên bản mới nhất của mỗi repository (Dùng để rollback khi cần)
+  # cleanup_policies {
+  #   id     = "keep-recent-5-versions"
+  #   action = "KEEP"
+  #   most_recent_versions {
+  #     keep_count = 2
+  #   }
+  # }
 
   # 3. Chính sách XÓA: Xóa tất cả các image cũ hơn 30 ngày (nếu chúng không rơi vào 2 trường hợp giữ lại ở trên)
   cleanup_policies {
@@ -40,7 +40,7 @@ resource "google_artifact_registry_repository" "erp_docker_repo" {
     action = "DELETE"
     condition {
       tag_state  = "ANY"
-      older_than = "2592000s" # 30 ngày quy đổi ra giây
+      older_than = "86400s" # 30 ngày quy đổi ra giây
     }
   }
 }

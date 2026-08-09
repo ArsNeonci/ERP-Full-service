@@ -1,6 +1,6 @@
 spring:
   application:
-    name: finance-service
+    name: identity-service
   
   # Cấu hình nạp biến môi trường từ file .env ở thư mục gốc
   config:

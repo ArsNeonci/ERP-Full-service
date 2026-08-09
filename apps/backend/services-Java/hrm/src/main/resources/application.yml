@@ -1,6 +1,6 @@
 spring:
   application:
-    name: crm-service
+    name: hrm-service
   
   # Cấu hình nạp biến môi trường từ file .env ở thư mục gốc
   config:
@@ -31,6 +31,3 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
 
-# (Tùy chọn) Chuyển port chạy local để không đụng cổng 8080 của Gateway
-server:
-  port: 8080

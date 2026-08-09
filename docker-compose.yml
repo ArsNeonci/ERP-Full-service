@@ -19,24 +19,25 @@ services:
   # =========================================================
   postgres-db:
     image: pgvector/pgvector:pg15-trixie
-
-
     profiles: ["infra", "fullstack"]
     container_name: erp-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_password}
-      POSTGRES_MULTIPLE_DATABASES: "identity_db,inventory_db,purchasing_db,sales_db,crm_db,finance_db,hrm_db,ai_orchestrator_db,ai_vector_db"
+      POSTGRES_MULTIPLE_DATABASES: "identity_db,inventory_db,purchasing_db,sales_db,crm_db,finance_db,hrm_db,ai_orchestrator_db,ai_vector_db,facial_recognition_db"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - erp_network
-
-
 
   redis-cache:
     image: redis:8.10-rc2-alpine3.23
@@ -47,6 +48,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - erp_network
 
@@ -61,6 +67,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - erp_network
 
@@ -82,8 +93,13 @@ services:
       - "8080:8080" # PUBLIC: Cổng duy nhất Frontend gọi vào
     environment:
       - ENV=development
+      - REDIS_HOST=redis-cache # Rate Limiting & Blacklist Token
+      - REDIS_PORT=6379
     depends_on:
-      - identity-service
+      identity-service:
+        condition: service_started
+      redis-cache:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -98,11 +114,16 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=identity_db
+      - REDIS_HOST=redis-cache # Quản lý JWT Blacklist & Active Session
+      - REDIS_PORT=6379
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -120,11 +141,21 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=inventory_db
+      - REDIS_HOST=redis-cache # Cache tồn kho thời gian thực
+      - REDIS_PORT=6379
+      - MONGO_HOST=mongodb-service # Thuộc tính sản phẩm động (Dynamic Attributes)
+      - MONGO_PORT=27017
+      - MONGO_DB=inventory_db
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      mongodb-service:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -139,11 +170,12 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=purchasing_db
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -158,11 +190,16 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=sales_db
+      - REDIS_HOST=redis-cache # Giỏ hàng Ecommerce Session & Flash Sale
+      - REDIS_PORT=6379
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -180,14 +217,16 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=crm_db
-      - REDIS_HOST=redis-cache # CRM sử dụng Redis cache
+      - REDIS_HOST=redis-cache # Cache hồ sơ khách hàng & Lịch sử tương tác
       - REDIS_PORT=6379
     depends_on:
-      - postgres-db
-      - redis-cache
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -202,11 +241,12 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=finance_db
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -221,11 +261,17 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=hrm_db
+      - MONGO_HOST=mongodb-service # Lưu Audit Logs thao tác của nhân sự
+      - MONGO_PORT=27017
+      - MONGO_DB=hrm_audit_db
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+      mongodb-service:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -245,20 +291,23 @@ services:
       # Kết nối Postgres (Lưu State/LangGraph)
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=ai_orchestrator_db
-      # Kết nối Redis (Cache & Token)
+      # Kết nối Redis (Semantic Cache & Temporary Token)
       - REDIS_HOST=redis-cache
       - REDIS_PORT=6379
-      # Kết nối MongoDB (Reasoning Logs)
+      # Kết nối MongoDB (Reasoning Logs & Raw Chat History)
       - MONGO_HOST=mongodb-service
       - MONGO_PORT=27017
       - MONGO_DB=ai_logs_db
     depends_on:
-      - postgres-db
-      - redis-cache
-      - mongodb-service
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      mongodb-service:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -267,7 +316,6 @@ services:
       context: ./apps/AI/MultimodalEngine
       dockerfile: Dockerfile
       args:
-        # Chạy Local dùng image thuần
         BASE_IMAGE: python:3.13.6-slim-bullseye 
     profiles: ["fullstack"]
     container_name: erp-ai-multimodal-engine
@@ -277,13 +325,15 @@ services:
       # Kết nối Postgres có pgvector
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=ai_vector_db
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - erp_network
+
   ai-facial-recognition:
     build:
       context: ./apps/AI/FacialRecognition
@@ -295,9 +345,12 @@ services:
       - ENV=development
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=facial_recognition_db
+    depends_on:
+      postgres-db:
+        condition: service_healthy
     networks:
       - erp_network
 
@@ -316,6 +369,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080 # Trỏ về Gateway ở local
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_started
     networks:
       - erp_network

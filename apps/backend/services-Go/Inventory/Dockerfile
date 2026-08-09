@@ -18,13 +18,18 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM alpine:3.23 AS final
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates
+# Bổ sung thư viện tzdata và set biến môi trường múi giờ
+RUN apk add --no-cache ca-certificates tzdata
+ENV TZ=Asia/Ho_Chi_Minh
 
 # Bảo mật: Non-root user
 RUN addgroup -S gouser && adduser -S gouser -G gouser
 USER gouser:gouser
 
+# Copy file thực thi
 COPY --from=build /app/app .
+# [SỬA LỖI Ở ĐÂY] Copy thêm thư mục migration chứa các file .sql
+COPY --from=build /app/db/migration ./db/migration
 
 EXPOSE 8080
 ENTRYPOINT ["./app"]
