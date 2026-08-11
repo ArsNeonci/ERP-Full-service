@@ -60,9 +60,13 @@ jobs:
             context: ./apps/backend/services-Go/Sales
             dockerfile: ./apps/backend/services-Go/Sales/Dockerfile
 
-          - name: ai-chatbot
-            context: ./apps/AI/Chatbot
-            dockerfile: ./apps/AI/Chatbot/Dockerfile
+          - name: ai-multimodal-engine
+            context: ./apps/AI/MultimodalEngine
+            dockerfile: ./apps/AI/MultimodalEngine/Dockerfile
+            is_ai: true
+          - name: ai-orchestrator
+            context: ./apps/AI/Orchestrator
+            dockerfile: ./apps/AI/Orchestrator/Dockerfile
             is_ai: true
           - name: ai-face-recognition
             context: ./apps/AI/FacialRecognition
