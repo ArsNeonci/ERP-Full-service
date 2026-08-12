@@ -1,11 +1,7 @@
 from fastapi import FastAPI
 
-# 1. BIẾN 'app' BẮT BUỘC PHẢI TỒN TẠI VÀ ĐÚNG TÊN
-app = FastAPI(
-    title="ERP AI Service",
-    version="1.0.0"
-)
+app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"status": "AI Service is running"}
+@app.get("/api/ai-face/health")
+def health_check():
+    return {"status": "success", "message": "Face Recognition Service is running successfully!"}
