@@ -1,11 +1,11 @@
 # Biến môi trường chung
 variable "region" {
   type    = string
-  default = "asia-southeast1" # Singapore
+  default = "asia-northeast1" # Singapore
 }
 variable "zone" {
   type    = string
-  default = "asia-southeast1-a"
+  default = "asia-northeast1-a"
 }
 
 # --- Thông tin GCP ---
