@@ -110,6 +110,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-identity
     restart: unless-stopped
+    ports:
+      - "8081:8081" # Port mới cho Identity (Spring Boot)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -119,6 +121,7 @@ services:
       - DB_NAME=identity_db
       - REDIS_HOST=redis-cache # Quản lý JWT Blacklist & Active Session
       - REDIS_PORT=6379
+      - SERVER_PORT=8081 # Ép Spring Boot chạy ở port này
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -137,6 +140,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-inventory
     restart: unless-stopped
+    ports:
+      - "8091:8091" # Port mới cho Inventory (Golang)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -166,6 +171,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-purchasing
     restart: unless-stopped
+    ports:
+      - "8092:8092" # Port mới cho Purchasing (Golang)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -186,6 +193,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-sales
     restart: unless-stopped
+    ports:
+      - "8093:8093" # Port mới cho Sales (Golang)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -213,6 +222,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-crm
     restart: unless-stopped
+    ports:
+      - "8082:8082" # Port mới cho CRM (Spring Boot)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -222,6 +233,7 @@ services:
       - DB_NAME=crm_db
       - REDIS_HOST=redis-cache # Cache hồ sơ khách hàng & Lịch sử tương tác
       - REDIS_PORT=6379
+      - SERVER_PORT=8082 # Ép Spring Boot chạy ở port này
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -237,6 +249,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-finance
     restart: unless-stopped
+    ports:
+      - "8083:8083" # Port mới cho Finance (Spring Boot)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -244,6 +258,7 @@ services:
       - DB_USERNAME=${DB_USERNAME:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-secret_password}
       - DB_NAME=finance_db
+      - SERVER_PORT=8083
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -257,6 +272,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-hrm
     restart: unless-stopped
+    ports:
+      - "8084:8084" # Port mới cho HRM (Spring Boot)
     environment:
       - ENV=development
       - DB_HOST=postgres-db
@@ -267,6 +284,7 @@ services:
       - MONGO_HOST=mongodb-service # Lưu Audit Logs thao tác của nhân sự
       - MONGO_PORT=27017
       - MONGO_DB=hrm_audit_db
+      - SERVER_PORT=8084
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -286,6 +304,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-ai-orchestrator
     restart: unless-stopped
+    ports:
+      - "8003:8003" # Port mới cho Orchestrator (FastAPI)
     environment:
       - ENV=development
       # Kết nối Postgres (Lưu State/LangGraph)
@@ -320,6 +340,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-ai-multimodal-engine
     restart: unless-stopped
+    ports:
+      - "8002:8002" # Port mới cho Multimodal Engine (FastAPI)
     environment:
       - ENV=development
       # Kết nối Postgres có pgvector
@@ -341,6 +363,8 @@ services:
     profiles: ["fullstack"]
     container_name: erp-ai-facial-recognition
     restart: unless-stopped
+    ports:
+      - "8001:8001" # Port mới cho Facial Recognition (FastAPI)
     environment:
       - ENV=development
       - DB_HOST=postgres-db

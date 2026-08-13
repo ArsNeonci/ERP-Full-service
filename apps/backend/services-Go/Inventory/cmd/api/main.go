@@ -24,7 +24,7 @@ func main() {
 	// 4. Khởi tạo Gin Router
 	router := gin.Default()
 
-	port := ":8080"
+	port := ":8093"
 	log.Printf("🚀 Inventory Service (Golang) đang chạy tại port %s", port)
 	router.Run(port)
 }

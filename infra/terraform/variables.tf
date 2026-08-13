@@ -1,7 +1,7 @@
 # Biến môi trường chung
 variable "region" {
   type    = string
-  default = "asia-northeast1" # Singapore
+  default = "asia-northeast1"
 }
 variable "zone" {
   type    = string
@@ -37,5 +37,5 @@ variable "cloudflare_account_id" {
 variable "dev_team_emails" {
   type        = list(string)
   description = "Danh sách email của team Dev được phép truy cập"
-  default     = ["quanglinh1286@gmail.com", "chuquanglinh2004@gmail.com"]
+  default     = ["quanglinh1286@gmail.com", "chuquanglinh2004@gmail.com", "9hstv2fmhh@privaterelay.appleid.com"]
 }

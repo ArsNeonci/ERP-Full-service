@@ -19,7 +19,7 @@ spec:
         image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/backend-hrm:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 8084
         env:
         - name: ENV
           value: "development"
@@ -53,4 +53,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8080
+      targetPort: 8084

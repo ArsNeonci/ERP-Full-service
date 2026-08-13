@@ -3,7 +3,7 @@ name: Monorepo CI/CD - Build & Push to GAR
 on:
   push:
     branches: [ "main" ]
-    # Lọc chỉ chạy CI khi có thay đổi trong source code
+    # Lọc chỉ chạy CI khi có thay đổi trong source code hoặc thư mục infra
     paths:
       - 'apps/**'
       - '.github/workflows/ci.yml'
@@ -15,105 +15,145 @@ env:
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
+  # ==========================================
+  # JOB 1: PHÁT HIỆN SỰ THAY ĐỔI
+  # ==========================================
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      # Xuất các biến này ra để Job 2 sử dụng
+      frontend: ${{ steps.filter.outputs.frontend }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      identity: ${{ steps.filter.outputs.identity }}
+      hrm: ${{ steps.filter.outputs.hrm }}
+      finance: ${{ steps.filter.outputs.finance }}
+      crm: ${{ steps.filter.outputs.crm }}
+      inventory: ${{ steps.filter.outputs.inventory }}
+      purchasing: ${{ steps.filter.outputs.purchasing }}
+      sales: ${{ steps.filter.outputs.sales }}
+      multimodal: ${{ steps.filter.outputs.multimodal }}
+      orchestrator: ${{ steps.filter.outputs.orchestrator }}
+      face_recognition: ${{ steps.filter.outputs.face_recognition }}
+      # Biến check xem Base Image của AI có bị thay đổi không
+      ai_base: ${{ steps.filter.outputs.ai_base }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'apps/frontend/erp-ars-neonci/**'
+            gateway:
+              - 'apps/Middleware/gateway/**'
+            identity:
+              - 'apps/Middleware/identity/**'
+            hrm:
+              - 'apps/backend/services-Java/hrm/**'
+            finance:
+              - 'apps/backend/services-Java/finance/**'
+            crm:
+              - 'apps/backend/services-Java/crm/**'
+            inventory:
+              - 'apps/backend/services-Go/Inventory/**'
+            purchasing:
+              - 'apps/backend/services-Go/Purchasing/**'
+            sales:
+              - 'apps/backend/services-Go/Sales/**'
+            multimodal:
+              - 'apps/AI/MultimodalEngine/**'
+            orchestrator:
+              - 'apps/AI/Orchestrator/**'
+            face_recognition:
+              - 'apps/AI/FacialRecognition/**'
+            ai_base:
+              - 'apps/AI/base.Dockerfile'
+
+  # ==========================================
+  # JOB 2: TẠO MA TRẬN ĐỘNG DỰA TRÊN THAY ĐỔI
+  # ==========================================
+  setup-matrix:
+    name: Setup Matrix
+    needs: changes
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          # Khởi tạo mảng JSON rỗng
+          MATRIX_JSON="[]"
+          
+          # Thêm các service vào ma trận nếu có thay đổi (true)
+          if [ "${{ needs.changes.outputs.frontend }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "erp-frontend", "context": "./apps/frontend/erp-ars-neonci", "dockerfile": "./apps/frontend/erp-ars-neonci/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.gateway }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "api-gateway", "context": "./apps/Middleware/gateway", "dockerfile": "./apps/Middleware/gateway/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.identity }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "auth-identity", "context": "./apps/Middleware/identity", "dockerfile": "./apps/Middleware/identity/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.hrm }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-hrm", "context": "./apps/backend/services-Java/hrm", "dockerfile": "./apps/backend/services-Java/hrm/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.finance }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-finance", "context": "./apps/backend/services-Java/finance", "dockerfile": "./apps/backend/services-Java/finance/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.crm }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-crm", "context": "./apps/backend/services-Java/crm", "dockerfile": "./apps/backend/services-Java/crm/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.inventory }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-inventory", "context": "./apps/backend/services-Go/Inventory", "dockerfile": "./apps/backend/services-Go/Inventory/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.purchasing }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-purchasing", "context": "./apps/backend/services-Go/Purchasing", "dockerfile": "./apps/backend/services-Go/Purchasing/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.sales }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "backend-sales", "context": "./apps/backend/services-Go/Sales", "dockerfile": "./apps/backend/services-Go/Sales/Dockerfile"}]'); fi
+          if [ "${{ needs.changes.outputs.multimodal }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "ai-multimodal-engine", "context": "./apps/AI/MultimodalEngine", "dockerfile": "./apps/AI/MultimodalEngine/Dockerfile", "is_ai": true}]'); fi
+          if [ "${{ needs.changes.outputs.orchestrator }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "ai-orchestrator", "context": "./apps/AI/Orchestrator", "dockerfile": "./apps/AI/Orchestrator/Dockerfile", "is_ai": true}]'); fi
+          if [ "${{ needs.changes.outputs.face_recognition }}" == "true" ]; then MATRIX_JSON=$(echo $MATRIX_JSON | jq '. += [{"name": "ai-face-recognition", "context": "./apps/AI/FacialRecognition", "dockerfile": "./apps/AI/FacialRecognition/Dockerfile", "is_ai": true}]'); fi
+          
+          # Xuất chuỗi JSON sang biến output của step
+          echo "matrix={\"service\":$(echo $MATRIX_JSON)}" >> $GITHUB_OUTPUT
+
+  # ==========================================
+  # JOB 3: BUILD VÀ PUSH (CHỈ CHẠY CÁC SERVICE TRONG MATRIX)
+  # ==========================================
   build-and-push:
+    needs: [changes, setup-matrix]
+    # Chỉ chạy job này nếu ma trận không rỗng (nghĩa là có ít nhất 1 service thay đổi)
+    if: ${{ fromJson(needs.setup-matrix.outputs.matrix).service[0] != null }}
     name: Build & Push ${{ matrix.service.name }}
     runs-on: ubuntu-latest
     
-    # BẮT BUỘC để WIF có thể cấp phát OIDC Token
     permissions:
       contents: 'read'
       id-token: 'write'
 
     strategy:
       fail-fast: false
-      matrix:
-        # Khai báo mapping cho các ứng dụng trong hệ thống
-        service:
-          - name: erp-frontend
-            context: ./apps/frontend/erp-ars-neonci
-            dockerfile: ./apps/frontend/erp-ars-neonci/Dockerfile
-
-          - name: api-gateway
-            context: ./apps/Middleware/gateway
-            dockerfile: ./apps/Middleware/gateway/Dockerfile
-          - name: auth-identity
-            context: ./apps/Middleware/identity
-            dockerfile: ./apps/Middleware/identity/Dockerfile
-
-          - name: backend-hrm
-            context: ./apps/backend/services-Java/hrm
-            dockerfile: ./apps/backend/services-Java/hrm/Dockerfile
-          - name: backend-finance
-            context: ./apps/backend/services-Java/finance
-            dockerfile: ./apps/backend/services-Java/finance/Dockerfile
-          - name: backend-crm
-            context: ./apps/backend/services-Java/crm
-            dockerfile: ./apps/backend/services-Java/crm/Dockerfile
-
-          - name: backend-inventory
-            context: ./apps/backend/services-Go/Inventory
-            dockerfile: ./apps/backend/services-Go/Inventory/Dockerfile
-          - name: backend-purchasing
-            context: ./apps/backend/services-Go/Purchasing
-            dockerfile: ./apps/backend/services-Go/Purchasing/Dockerfile
-          - name: backend-sales
-            context: ./apps/backend/services-Go/Sales
-            dockerfile: ./apps/backend/services-Go/Sales/Dockerfile
-
-          - name: ai-multimodal-engine
-            context: ./apps/AI/MultimodalEngine
-            dockerfile: ./apps/AI/MultimodalEngine/Dockerfile
-            is_ai: true
-          - name: ai-orchestrator
-            context: ./apps/AI/Orchestrator
-            dockerfile: ./apps/AI/Orchestrator/Dockerfile
-            is_ai: true
-          - name: ai-face-recognition
-            context: ./apps/AI/FacialRecognition
-            dockerfile: ./apps/AI/FacialRecognition/Dockerfile
-            is_ai: true
+      matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v4
 
-      # Xác thực an toàn với GCP (Không dùng Key JSON)
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v3.0.0
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      # Cấu hình Docker cli để đẩy được lên Google Artifact Registry
       - name: Configure Docker for GAR
         run: |
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
 
-      - name: Kiểm tra danh sách file (Debug)
-        run: |
-          pwd
-          ls -la
-          ls -la apps/ || echo "Không tìm thấy thư mục apps"
-
-      # Cài đặt Buildx để sử dụng Docker Cache (cực kỳ cần thiết cho Java/Go)
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.2.0
+        uses: docker/setup-buildx-action@v3
 
+      # Chỉ build lại AI Base Image nếu file base.Dockerfile bị thay đổi
       - name: Build and Push AI Base Image
-        if: ${{ matrix.service.is_ai == true }}
-        uses: docker/build-push-action@v7.3.0
+        if: ${{ matrix.service.is_ai == true && needs.changes.outputs.ai_base == 'true' }}
+        uses: docker/build-push-action@v5
         with:
           context: ./apps/AI
           file: ./apps/AI/base.Dockerfile
           push: true
           tags: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/ai-base:latest
-          # Lưu cache riêng cho Base Image
           cache-from: type=gha,scope=ai-base
           cache-to: type=gha,mode=max,scope=ai-base
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v7.3.0
+        uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
@@ -121,6 +161,5 @@ jobs:
           tags: |
             ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ matrix.service.name }}:${{ env.IMAGE_TAG }}
             ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ matrix.service.name }}:latest
-          # Cấu hình lưu cache layer lên GitHub Actions cache
           cache-from: type=gha,scope=${{ matrix.service.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}

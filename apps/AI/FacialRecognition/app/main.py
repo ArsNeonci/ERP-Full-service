@@ -2,6 +2,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.get("/api/ai-face/health")
-def health_check():
-    return {"status": "success", "message": "Face Recognition Service is running successfully!"}
+@app.get("/api/ai-face/test")
+def test_python():
+    return {"message": "THÀNH CÔNG: Đây là phản hồi từ PYTHON (Face Recognition)!"}

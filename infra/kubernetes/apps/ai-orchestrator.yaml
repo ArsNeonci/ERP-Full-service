@@ -17,7 +17,7 @@ spec:
         image: asia-northeast1-docker.pkg.dev/erp-project-8386/arsneonci-repo/ai-orchestrator:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8000
+        - containerPort: 8003
         env:
         - name: DB_HOST
           value: "postgres-db"
@@ -40,4 +40,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8000
+      targetPort: 8003

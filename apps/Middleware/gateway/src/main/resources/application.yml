@@ -3,18 +3,19 @@ spring:
     name: gateway
   cloud:
     gateway:
-      routes:
-        - id: sales-service
-          uri: http://backend-sales:8080  # Tên K8s Service
-          predicates:
-            - Path=/api/sales/**
-        - id: crm-service
-          uri: http://backend-crm:8080
-          predicates:
-            - Path=/api/crm/**
-        - id: ai-face-service
-          uri: http://ai-face-recognition:8000
-          predicates:
-            - Path=/api/ai-face/**
+      mvc: # Bắt buộc phải có chữ 'mvc' vì bạn dùng gateway-server-webmvc
+        routes:
+          - id: crm-service-route
+            uri: http://backend-crm-svc:80
+            predicates:
+              - Path=/api/crm/**
+          - id: sales-service-route
+            uri: http://backend-sales-svc:80
+            predicates:
+              - Path=/api/sales/**
+          - id: ai-face-route
+            uri: http://ai-face-recognition-svc:80
+            predicates:
+              - Path=/api/ai-face/**
 server:
   port: 8080
