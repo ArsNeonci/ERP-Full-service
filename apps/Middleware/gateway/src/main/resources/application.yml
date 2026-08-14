@@ -1,21 +1,23 @@
 spring:
   application:
-    name: gateway
+    name: gateway-service
   cloud:
     gateway:
-      mvc: # Bắt buộc phải có chữ 'mvc' vì bạn dùng gateway-server-webmvc
-        routes:
-          - id: crm-service-route
-            uri: http://backend-crm-svc:80
-            predicates:
-              - Path=/api/crm/**
-          - id: sales-service-route
-            uri: http://backend-sales-svc:80
-            predicates:
-              - Path=/api/sales/**
-          - id: ai-face-route
-            uri: http://ai-face-recognition-svc:80
-            predicates:
-              - Path=/api/ai-face/**
-server:
-  port: 8080
+      routes:
+        # Route cho CRM (Java)
+        - id: crm-service
+          uri: http://backend-crm-svc:80
+          predicates:
+            - Path=/api/crm/**
+            
+        # Route cho Sales (Golang)
+        - id: sales-service
+          uri: http://backend-sales-svc:80
+          predicates:
+            - Path=/api/sales/**
+            
+        # Route cho AI Facial Recognition (Python)
+        - id: ai-face-recognition
+          uri: http://ai-face-recognition-svc:80
+          predicates:
+            - Path=/api/ai-face/**

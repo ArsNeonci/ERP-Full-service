@@ -1,13 +1,26 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-    r := gin.Default()
-    
-    r.GET("/api/sales/test", func(c *gin.Context) {
-        c.String(200, "THÀNH CÔNG: Đây là phản hồi từ GOLANG (Sales Service)!")
-    })
+	router := gin.Default()
 
-    r.Run(":8080") 
+	// Tạm thời bỏ qua Middleware kiểm tra JWT Auth
+	salesGroup := router.Group("/api/sales")
+	{
+		salesGroup.GET("/test", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"service": "Sales",
+				"tech":    "Golang Gin",
+				"status":  "200 OK",
+				"message": "Sales Microservice is reachable via API Gateway!",
+			})
+		})
+	}
+
+	// Service nội bộ K3s chạy ở port 8080
+	router.Run(":8080")
 }

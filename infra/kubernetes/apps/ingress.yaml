@@ -6,8 +6,8 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  # 1. Luật cho subdomain (portal)
-  - host: portal.arsneonci.space 
+  # 1. Luồng cho subdomain (portal)
+  - host: portal.arsneonci.space
     http:
       paths:
       - path: /api
@@ -15,16 +15,16 @@ spec:
         backend:
           service:
             name: api-gateway-svc
-            port: 
-              number: 80
+            port:
+               number: 80
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: erp-frontend
-            port: 
-              number: 3000
-  # 2. THÊM MỚI: Luật cho domain gốc
+            name: erp-frontend-svc
+            port:
+               number: 3000
+  # 2. Luồng cho domain gốc
   - host: arsneonci.space
     http:
       paths:
@@ -33,12 +33,12 @@ spec:
         backend:
           service:
             name: api-gateway-svc
-            port: 
-              number: 80
+            port:
+               number: 80
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: erp-frontend
-            port: 
-              number: 3000
+            name: erp-frontend-svc
+            port:
+               number: 3000

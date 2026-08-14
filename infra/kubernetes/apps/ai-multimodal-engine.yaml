@@ -23,7 +23,8 @@ spec:
           value: "postgres-db"
         - name: DB_NAME
           value: "ai_vector_db"
-        volumeMounts: # Mount Persistent Volume để load Model Weights từ ổ cứng
+        volumeMounts: 
+        # Mount Persistent Volume để load Model Weights từ ổ cứng
         - name: model-weights
           mountPath: /models
 ---
