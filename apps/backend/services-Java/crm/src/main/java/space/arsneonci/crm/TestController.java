@@ -1,4 +1,4 @@
-package main.java.space.arsneonci.crm;
+package space.arsneonci.crm; // <-- ĐÃ SỬA: Loại bỏ "main.java."
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +9,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/crm")
 public class TestController {
-    
+         
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> test() {
         return ResponseEntity.ok(Map.of(
