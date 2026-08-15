@@ -1,26 +1,6 @@
 spring:
   application:
     name: gateway-service
-  cloud:
-    gateway:
-      routes:
-        # Route cho CRM (Java)
-        - id: crm-service
-          uri: http://backend-crm-svc:80
-          predicates:
-            - Path=/api/crm/**
-            
-        # Route cho Sales (Golang)
-        - id: sales-service
-          uri: http://backend-sales-svc:80
-          predicates:
-            - Path=/api/sales/**
-            
-        # Route cho AI Facial Recognition (Python)
-        - id: ai-face-recognition
-          uri: http://ai-face-recognition-svc:80
-          predicates:
-            - Path=/api/ai-face/**
 
 logging:
   level:
