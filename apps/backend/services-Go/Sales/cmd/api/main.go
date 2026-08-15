@@ -8,7 +8,7 @@ import (
 func main() {
 	router := gin.Default()
 
-	// Tạm thời bỏ qua Middleware kiểm tra JWT Auth
+	// Tạm thời bỏ qua Middleware kiểm tra JWT Auth theo yêu cầu test
 	salesGroup := router.Group("/api/sales")
 	{
 		salesGroup.GET("/test", func(c *gin.Context) {
@@ -21,6 +21,6 @@ func main() {
 		})
 	}
 
-	// Service nội bộ K3s chạy ở port 8080
-	router.Run(":8080")
+	// Service nội bộ K3s chạy ở port 8093 (Khớp với containerPort trong backend-sales.yaml)
+	router.Run(":8093")
 }

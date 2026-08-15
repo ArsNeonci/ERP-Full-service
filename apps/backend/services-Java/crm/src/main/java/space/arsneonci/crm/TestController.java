@@ -9,9 +9,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/crm")
 public class TestController {
-
+    
     @GetMapping("/test")
-    public ResponseEntity<Map<String, String>> testCrmAPI() {
+    public ResponseEntity<Map<String, String>> test() {
         return ResponseEntity.ok(Map.of(
             "service", "CRM",
             "tech", "Java Spring Boot",
