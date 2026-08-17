@@ -24,10 +24,11 @@ export default function LoginPage() {
       
       if (res.ok) {
         setLog(`✅ Server phản hồi: ${data.message}`);
-        // Chuyển hướng sang trang Dashboard sau 1 giây
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
-        setLog(`❌ Lỗi: ${data.message}`);
+        // Lấy data.message (từ service của bạn) HOẶC data.error (từ Gateway)
+        const errorMessage = data.message || data.error || 'Lỗi không xác định';
+        setLog(`❌ Lỗi: ${errorMessage}`);
       }
     } catch (error) {
       setLog('❌ Không thể kết nối tới Gateway/Identity Service.');

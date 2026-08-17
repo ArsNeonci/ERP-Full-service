@@ -39,7 +39,7 @@ public class GatewayApplication {
                 .uri("http://ai-face-recognition-svc:80"))
             
             .route("identity-service", r -> r.path("/api/identity/**")
-                .uri("http://identity-svc:80"))
+                .uri("http://auth-identity-svc:80"))
                 
             .build();
     }
