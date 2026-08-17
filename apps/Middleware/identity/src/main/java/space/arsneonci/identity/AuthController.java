@@ -8,12 +8,18 @@ import java.util.Map;
 @RequestMapping("/api/identity")
 public class AuthController {
 
+    // 1. Endpoint test REST tương tự các Microservices đại diện (CRM, Sales...)
+    @GetMapping("/test")
+    public String testConnection() {
+        return "✅ [IDENTITY SERVICE] Kết nối REST qua Gateway thành công!";
+    }
+
+    // 2. Endpoint login tạm thời đã cấu hình từ trước
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        // Logic tạm thời: Tài khoản cứng trong code
         if ("admin".equals(username) && "123456".equals(password)) {
             System.out.println("✅ [LOG] Đăng nhập thành công với tài khoản: " + username);
             return ResponseEntity.ok(Map.of(

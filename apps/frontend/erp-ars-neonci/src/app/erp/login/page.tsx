@@ -14,7 +14,7 @@ export default function LoginPage() {
     setLog('Đang kết nối đến API Gateway...');
     
     try {
-      const res = await fetch('https://arsneonci.space/api/identity/login', {
+      const res = await fetch('/api/identity/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
